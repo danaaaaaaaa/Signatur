@@ -1,5 +1,6 @@
 // Einfacher Service Worker: erst Netz, bei Offline der Zwischenspeicher
-const CACHE = 'freisteller-v1';
+// (so ist auch die PDF-Komponente nach dem ersten Mal offline verfügbar)
+const CACHE = 'signatur-v3';
 const FILES = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,10 +15,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request).then(res => {
       const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy));
+      caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;
     }).catch(() => caches.match(e.request))
   );

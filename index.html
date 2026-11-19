@@ -4,50 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Freisteller">
-  <meta name="theme-color" content="#1f2937">
+  <meta name="apple-mobile-web-app-title" content="Signatur">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#5b7cfa">
   <link rel="manifest" href="manifest.json">
-  <title>Freisteller</title>
+  <title>Signatur</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
-           background: #f3f4f6; color: #111827; }
-    header { background: #1f2937; color: #fff; padding: 14px 16px; font-size: 1.2rem; font-weight: 600; }
-    main { max-width: 760px; margin: 0 auto; padding: 12px; }
+    /* ===== Farben (hell / dunkel) ===== */
+    :root {
+      --text: #111114;
+      --sub: #6c6c74;
+      --accent: #0a84ff;
+      --glass: rgba(255, 255, 255, .55);
+      --glass-strong: rgba(255, 255, 255, .72);
+      --glass-border: rgba(255, 255, 255, .75);
+      --line: rgba(60, 60, 67, .16);
+      --fill: rgba(120, 120, 128, .16);
+      --shadow: 0 8px 32px rgba(31, 38, 135, .14);
+      --blob1: #7aa7ff; --blob2: #ff9ecb; --blob3: #8be3d0; --base: #eef1f8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text: #f5f5f7;
+        --sub: #a1a1aa;
+        --glass: rgba(44, 44, 52, .55);
+        --glass-strong: rgba(58, 58, 68, .7);
+        --glass-border: rgba(255, 255, 255, .14);
+        --line: rgba(255, 255, 255, .14);
+        --fill: rgba(120, 120, 128, .32);
+        --shadow: 0 8px 32px rgba(0, 0, 0, .45);
+        --blob1: #3a4fd1; --blob2: #8e2f78; --blob3: #12706a; --base: #0d0d12;
+      }
+    }
 
-    /* Reiter */
-    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-    .tabs button { flex: 1; padding: 12px; border: 0; border-radius: 10px; font-size: 1rem;
-                   background: #e5e7eb; color: #111827; }
-    .tabs button.active { background: #2563eb; color: #fff; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      color: var(--text); background: var(--base); min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    .card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
-    .row label { min-width: 120px; }
-    .row input[type=range] { flex: 1; min-width: 140px; }
-    .hint { color: #6b7280; font-size: .9rem; margin: 6px 0; }
-    .hidden { display: none !important; }
+    /* Farbige, unscharfe Flächen hinter den Glas-Fenstern */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(40vmax 40vmax at 12% 8%,  var(--blob1) 0%, transparent 70%),
+        radial-gradient(45vmax 45vmax at 95% 25%, var(--blob2) 0%, transparent 70%),
+        radial-gradient(50vmax 50vmax at 30% 100%, var(--blob3) 0%, transparent 70%);
+      opacity: .75;
+    }
 
-    button.btn, label.btn { display: inline-block; padding: 12px 16px; border: 0; border-radius: 10px;
-      background: #2563eb; color: #fff; font-size: 1rem; cursor: pointer; text-align: center; }
-    button.btn.secondary { background: #e5e7eb; color: #111827; }
-    button.btn:disabled { opacity: .4; }
+    /* ===== Kopfzeile ===== */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      padding: calc(env(safe-area-inset-top) + 14px) 16px 12px;
+      background: var(--glass); border-bottom: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      text-align: center; font-size: 1.05rem; font-weight: 600; letter-spacing: .2px;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 16px 14px calc(env(safe-area-inset-bottom) + 28px); }
+
+    /* ===== Glas-Fenster ===== */
+    .card {
+      background: var(--glass); border: 1px solid var(--glass-border); border-radius: 22px;
+      padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow);
+      -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+    }
+
+    /* ===== Segment-Schalter (Reiter und Modus) ===== */
+    .seg { display: flex; padding: 3px; border-radius: 12px; background: var(--fill); gap: 2px; }
+    .seg > button, .seg > label { flex: 1; margin: 0; }
+    .seg > button, .seg > label span {
+      display: block; width: 100%; padding: 9px 8px; border: 0; border-radius: 9px;
+      background: transparent; color: var(--text); font: inherit; font-size: .95rem; font-weight: 500;
+      text-align: center; cursor: pointer; transition: background .2s, box-shadow .2s;
+    }
+    .seg > button.active, .seg > label input:checked + span {
+      background: var(--glass-strong); box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+    }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .tabs { margin-bottom: 16px; }
+
+    /* ===== Drag-and-drop-Feld ===== */
+    .drop {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      padding: 34px 16px; border: 2px dashed var(--line); border-radius: 18px; text-align: center;
+      cursor: pointer; transition: all .2s; background: var(--fill); margin-bottom: 14px;
+    }
+    .drop .icon { font-size: 2rem; line-height: 1; }
+    .drop .title { font-weight: 600; }
+    .drop .sub { color: var(--sub); font-size: .85rem; }
+    .drop.over { border-color: var(--accent); background: rgba(10, 132, 255, .18); transform: scale(1.015); }
+    .drop.compact { padding: 14px 16px; flex-direction: row; gap: 10px; }
+    .drop.compact .icon { font-size: 1.3rem; }
+    .drop.compact .sub { display: none; }
     input[type=file] { display: none; }
 
-    /* Schachbrett-Hintergrund zeigt die Transparenz */
-    .checker { border-radius: 8px; overflow: hidden; line-height: 0; text-align: center;
-      background-color: #fff;
-      background-image: conic-gradient(#d1d5db 25%, #fff 0 50%, #d1d5db 0 75%, #fff 0);
-      background-size: 20px 20px; }
+    /* ===== Listenzeilen ===== */
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+           padding: 11px 0; border-top: 1px solid var(--line); }
+    .row.first { border-top: 0; }
+    .row > label { flex-shrink: 0; }
+    .row input[type=range] { flex: 1; max-width: 62%; }
+    .row.buttons { justify-content: flex-start; flex-wrap: wrap; }
+    .hint { color: var(--sub); font-size: .85rem; margin: 8px 2px 0; line-height: 1.4; }
+    .hidden { display: none !important; }
+    input[type=color] { width: 44px; height: 30px; border: 0; padding: 0; border-radius: 8px;
+                        background: none; cursor: pointer; }
+
+    /* ===== Schieberegler ===== */
+    input[type=range] { -webkit-appearance: none; appearance: none; height: 28px; background: transparent; }
+    input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--fill); }
+    input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--fill); }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -11px;
+      border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); border: 0; }
+    input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .3); border: 0; }
+
+    /* ===== Ein/Aus-Schalter (wie iOS) ===== */
+    input.switch { -webkit-appearance: none; appearance: none; flex-shrink: 0; width: 51px; height: 31px;
+      border-radius: 16px; background: var(--fill); position: relative; cursor: pointer;
+      transition: background .25s; margin: 0; }
+    input.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px;
+      border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); transition: transform .25s; }
+    input.switch:checked { background: #34c759; }
+    input.switch:checked::after { transform: translateX(20px); }
+
+    /* ===== Schaltflächen ===== */
+    .btn { display: inline-block; padding: 13px 20px; border: 0; border-radius: 14px; background: var(--accent);
+           color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-align: center;
+           transition: transform .1s, opacity .2s; }
+    .btn:active { transform: scale(.97); }
+    .btn.secondary { background: var(--fill); color: var(--text); font-weight: 500; }
+    .btn.full { width: 100%; margin-top: 12px; }
+    .btn:disabled { opacity: .35; pointer-events: none; }
+
+    /* ===== Vorschau mit Schachbrett (zeigt Transparenz) ===== */
+    .checker { border-radius: 14px; overflow: hidden; line-height: 0; text-align: center; background-color: #fff;
+      background-image: conic-gradient(#d4d4d8 25%, #fff 0 50%, #d4d4d8 0 75%, #fff 0);
+      background-size: 20px 20px; border: 1px solid var(--line); }
     .checker canvas { max-width: 100%; height: auto; }
     #padCanvas { width: 100%; touch-action: none; cursor: crosshair; }
     #outCanvas.wand { cursor: crosshair; }
   </style>
 </head>
 <body>
-  <header>Freisteller</header>
+  <header>Signatur</header>
   <main>
-    <div class="tabs">
+    <!-- Reiter -->
+    <div class="seg tabs">
       <button id="tabUpload" class="active">Bild freistellen</button>
       <button id="tabPad">Signatur zeichnen</button>
     </div>
@@ -55,65 +161,95 @@
     <!-- ===== Bereich 1: Bild hochladen und Hintergrund entfernen ===== -->
     <section id="panelUpload">
       <div class="card">
-        <label class="btn" for="fileInput">Bild wählen / Foto aufnehmen</label>
-        <input id="fileInput" type="file" accept="image/*">
+        <!-- Drag-and-drop-Feld: Bild hineinziehen, tippen/klicken oder mit Strg+V einfügen -->
+        <label id="dropZone" class="drop" for="fileInput">
+          <span class="icon">🖼️</span>
+          <span class="title">Bild oder PDF hier ablegen</span>
+          <span class="sub">oder tippen zum Auswählen · auch Strg/Cmd + V zum Einfügen</span>
+        </label>
+        <input id="fileInput" type="file" accept="image/*,application/pdf,.pdf">
 
-        <div class="row">
-          <label><input type="radio" name="mode" value="signatur" checked> Signatur / Zeichnung auf Papier</label>
-          <label><input type="radio" name="mode" value="wand"> Foto (Hintergrund antippen)</label>
+        <!-- Seitenwahl: erscheint nur bei mehrseitigen PDFs -->
+        <div id="pageRow" class="row first hidden" style="margin-bottom:8px">
+          <button id="pagePrev" class="btn secondary">‹</button>
+          <span id="pageLabel">Seite 1 / 1</span>
+          <button id="pageNext" class="btn secondary">›</button>
+        </div>
+
+        <div class="seg">
+          <label><input type="radio" name="mode" value="signatur" checked><span>Unterschrift</span></label>
+          <label><input type="radio" name="mode" value="wand"><span>Foto</span></label>
         </div>
 
         <!-- Einstellungen: Signatur-Modus -->
         <div id="ctlSig">
-          <div class="row"><label for="thr">Empfindlichkeit</label><input id="thr" type="range" min="20" max="250" value="190"></div>
+          <div class="row first"><label for="thr">Empfindlichkeit</label><input id="thr" type="range" min="20" max="250" value="190"></div>
           <div class="row"><label for="soft">Kantenweichheit</label><input id="soft" type="range" min="0" max="80" value="25"></div>
-          <div class="row"><label><input id="norm" type="checkbox" checked> Beleuchtung ausgleichen (Schatten, Handyfoto)</label></div>
+          <div class="row"><label for="norm">Schatten ausgleichen</label><input id="norm" class="switch" type="checkbox" checked></div>
           <div class="row">
-            <label><input id="recolor" type="checkbox"> Farbe ersetzen</label>
-            <input id="inkColor" type="color" value="#000000">
+            <label for="recolor">Farbe ersetzen</label>
+            <span style="display:flex;align-items:center;gap:12px">
+              <input id="inkColor" type="color" value="#000000">
+              <input id="recolor" class="switch" type="checkbox">
+            </span>
           </div>
-          <p class="hint">Tipp: Unterschrift mit dunklem Stift auf weißes Papier schreiben, gerade von oben fotografieren.</p>
+          <p class="hint">Tipp: Mit dunklem Stift auf weißes Papier schreiben und gerade von oben fotografieren.</p>
         </div>
 
         <!-- Einstellungen: Zauberstab-Modus -->
         <div id="ctlWand" class="hidden">
-          <div class="row"><label for="tol">Toleranz</label><input id="tol" type="range" min="0" max="100" value="25"></div>
-          <div class="row"><label><input id="autoEdge" type="checkbox" checked> Rand automatisch entfernen</label></div>
-          <div class="row">
+          <div class="row first"><label for="tol">Toleranz</label><input id="tol" type="range" min="0" max="100" value="25"></div>
+          <div class="row"><label for="autoEdge">Rand automatisch entfernen</label><input id="autoEdge" class="switch" type="checkbox" checked></div>
+          <div class="row buttons">
             <button id="undoBtn" class="btn secondary">Rückgängig</button>
             <button id="resetBtn" class="btn secondary">Neu starten</button>
           </div>
-          <p class="hint">Tippe auf Bereiche des Hintergrunds, die weg sollen. Bei Resten Toleranz erhöhen.</p>
+          <p class="hint">Tippe auf Bereiche des Hintergrunds, die weg sollen. Bleiben Reste, Toleranz erhöhen.</p>
         </div>
       </div>
 
       <div class="card">
         <div class="checker"><canvas id="outCanvas" width="10" height="10"></canvas></div>
         <p id="hint" class="hint">Noch kein Bild gewählt.</p>
-        <div class="row">
-          <label><input id="trim" type="checkbox" checked> Auf Inhalt zuschneiden</label>
-        </div>
-        <button id="saveBtn" class="btn" disabled>Als PNG speichern</button>
       </div>
     </section>
 
     <!-- ===== Bereich 2: Signatur direkt zeichnen ===== -->
     <section id="panelPad" class="hidden">
       <div class="card">
-        <div class="checker"><canvas id="padCanvas" width="1200" height="500"></canvas></div>
-        <div class="row"><label for="penWidth">Strichstärke</label><input id="penWidth" type="range" min="3" max="20" value="8"></div>
-        <div class="row">
-          <label for="penColor">Stiftfarbe</label>
-          <input id="penColor" type="color" value="#000000">
-        </div>
-        <div class="row">
+        <div class="checker"><canvas id="padCanvas" width="2400" height="1000"></canvas></div>
+        <div class="row first" style="margin-top:6px"><label for="penWidth">Strichstärke</label><input id="penWidth" type="range" min="6" max="40" value="16"></div>
+        <div class="row"><label for="penColor">Stiftfarbe</label><input id="penColor" type="color" value="#000000"></div>
+        <div class="row buttons">
           <button id="padUndo" class="btn secondary">Rückgängig</button>
           <button id="padClear" class="btn secondary">Löschen</button>
-          <button id="padSave" class="btn">Als PNG speichern</button>
         </div>
-        <p class="hint">Mit Finger oder Maus unterschreiben. Das PNG hat einen transparenten Hintergrund.</p>
+        <p class="hint">Mit Finger oder Maus unterschreiben. Gespeichert wird unten im gewählten Format, bei PNG, WebP und PDF mit transparentem Hintergrund.</p>
       </div>
     </section>
+
+    <!-- ===== Ausgabe: gilt für beide Reiter ===== -->
+    <div class="card" id="exportCard">
+      <div class="seg">
+        <label><input type="radio" name="fmt" value="png" checked><span>PNG</span></label>
+        <label><input type="radio" name="fmt" value="jpg"><span>JPG</span></label>
+        <label><input type="radio" name="fmt" value="webp"><span>WebP</span></label>
+        <label><input type="radio" name="fmt" value="pdf"><span>PDF</span></label>
+      </div>
+      <p id="fmtHint" class="hint"></p>
+      <div class="row first">
+        <label for="trim">Auf Inhalt zuschneiden</label><input id="trim" class="switch" type="checkbox" checked>
+      </div>
+      <div id="rowQuality" class="row hidden">
+        <label for="quality">Qualität</label>
+        <input id="quality" type="range" min="60" max="100" value="100">
+        <span id="qualityVal" style="min-width:48px;text-align:right">100 %</span>
+      </div>
+      <div id="rowBg" class="row hidden">
+        <label for="bgColor">Hintergrundfarbe</label><input id="bgColor" type="color" value="#ffffff">
+      </div>
+      <button id="saveBtn" class="btn full" disabled>Als PNG speichern</button>
+    </div>
   </main>
 
   <script src="app.js"></script>
